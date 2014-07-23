@@ -1,8 +1,5 @@
-# Copyright (c) 2008 The NetBSD Foundation, Inc.
+# Copyright (c) 2014
 # All rights reserved.
-#
-# This code is derived from software contributed to The NetBSD Foundation
-# by 
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -13,7 +10,7 @@
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
 #
-# THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS
 # ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
 # TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 # PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
@@ -36,9 +33,14 @@ class Device(object):
     """This class describe a tcp kramer matrix connection.
     """
 
-    def __init__(self, ip="192.168.1.30", port="acc", machine_number=1, buffer_size=1024, autoswitch_delay=30):
+    def __init__(self, ip="192.168.1.30", port="acc", machine_number=1, buffer_size=1024):
+        """Initiate a link to a kramer matrix. This won't actually open the connection.
+        @param ip : the matrix ip
+        @param port : the matrix port 
+        @param machine_numer : the machine index in a aggregate of machines.
+        @param buffer_size : the buffer size used when reading the response from the matrix
+        """
         self.ip = ip
-        self.autoswitch_delay = autoswitch_delay
         self.port = port
         self.machine_number = machine_number
         self.buffer_size = buffer_size
@@ -47,6 +49,8 @@ class Device(object):
         return "<kramer.Device on tcp://{!s}:{!s}>".format(self.ip, self.port)
 
     def switch_audio(self, input, output):
+        """Create a link between input <input> and output <output>
+        """
         self.__send_instruction(Instructions.switch_audio, input, output)
 
     def store_audio_status(self, preset_index):
@@ -59,10 +63,10 @@ class Device(object):
         self.__send_instruction(Instructions.reset_audio, 0, 0)
 
     def __send_instruction(self, instruction, input, output):
-        # set the two first byte to 0
+        # set the two first bit to 0
         # first one is fixed
-        # second one is a bit set if we talk to all the matrices, this is never
-        # the case in this implementation
+        # second one is a bit set if we talk to the matrice as oposition to 
+        #from the matrix.
         instruction_byte = 0b00111111 & instruction.value
         # set the first bit to one
         input_byte = 0b10000000 | input
