@@ -36,7 +36,7 @@ class Device(object):
     def __init__(self, ip="192.168.1.30", port="acc", machine_number=1, buffer_size=1024):
         """Initiate a link to a kramer matrix. This won't actually open the connection.
         @param ip : the matrix ip
-        @param port : the matrix port 
+        @param port : the matrix port
         @param machine_numer : the machine index in a aggregate of machines.
         @param buffer_size : the buffer size used when reading the response from the matrix
         """
@@ -65,8 +65,8 @@ class Device(object):
     def __send_instruction(self, instruction, input, output):
         # set the two first bit to 0
         # first one is fixed
-        # second one is a bit set if we talk to the matrice as oposition to 
-        #from the matrix.
+        # second one is a bit set if we talk to the matrice as oposition to
+        # from the matrix.
         instruction_byte = 0b00111111 & instruction.value
         # set the first bit to one
         input_byte = 0b10000000 | input
@@ -85,16 +85,31 @@ class Device(object):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((self.ip, self.port,))
         sock.send(payload)
+
         response = sock.recv(self.buffer_size)
+        response_instruction_byte, response_input_byte, response_output_byte, response_machine_number_byte = struct.unpack('!BBBB')
+
         sock.close()
         logging.debug("received from the Device :{!s}".format(response))
+
+        # We mask the bit we don't need.
+        instruction_return = response_instruction_byte & 0b00111111
+        input_return = response_input_byte & 0b011111111
+        output_return = response_output_byte & 0b01111111
+        machine_return = response_machine_number_byte & 0b01111111
+
+        if instruction_return != instruction:
+            raise Exception("returned instruction doesn't match the sent one")
+
+        return (instruction_return, output_return, input_return, machine_return,)
 
 
 class Instructions(Enum):
     switch_audio = 2
+    request_size = 14
+    reset_audio = 18
     store_audio_status = 19
     recall_audio_status = 20
-    reset_audio = 18
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
